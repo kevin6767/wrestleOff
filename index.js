@@ -77,56 +77,58 @@ async function beginScraping(page, holderArr) {
 
 async function startExclProcess(teamArr) {
   let workbook = new Excel.Workbook()
+  teamArr.map(team => {
+    let worksheet = workbook.addWorksheet(`${team[0].teamName}`)
+    console.log(`--- Writing ${team[0].teamName} ---`)
+    worksheet.columns = [
+      {header: 'Team Name', key: 'teamName'},
+      {header: 'Name', key: 'name'},
+      {header: 'Weight', key: 'weight'},
+      {header: 'Wins', key: 'wins'},
+      {header: 'Losses', key: 'losses'},
+    ]
 
-  let worksheet = workbook.addWorksheet('Wrestlers')
-  worksheet.columns = [
-    {header: 'Team Name', key: 'teamName'},
-    {header: 'Name', key: 'name'},
-    {header: 'Weight', key: 'weight'},
-    {header: 'Wins', key: 'wins'},
-    {header: 'Losses', key: 'losses'},
-  ]
-
-  worksheet.columns.forEach(column => {
-    column.width = column.header.length < 18 ? 18 : column.header.length
-  })
-
-  worksheet.getRow(1).font = {bold: true}
-
-
-  teamArr.map(el => el.forEach((e, index) => {
-    const rowIndex = index + 2
-    worksheet.addRow({
-      ...e,
+    worksheet.columns.forEach(column => {
+      column.width = column.header.length < 18 ? 18 : column.header.length
     })
-    console.log(`--- Writing ${e.name} ---`)
-    worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
-      worksheet.getCell(`A${rowNumber}`).border = {
-        top: {style: 'thin'},
-        left: {style: 'thin'},
-        bottom: {style: 'thin'},
-        right: {style: 'none'}
-      }
 
-      const insideColumns = ['B', 'C', 'D', 'E']
-      insideColumns.forEach((v) => {
-        worksheet.getCell(`${v}${rowNumber}`).border = {
+    worksheet.getRow(1).font = {bold: true}
+
+    team.forEach((e, index) => {
+      const rowIndex = index + 2
+      worksheet.addRow({
+        ...e,
+      })
+      console.log(`--- Writing ${e.name} ---`)
+      worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
+        worksheet.getCell(`A${rowNumber}`).border = {
           top: {style: 'thin'},
+          left: {style: 'thin'},
           bottom: {style: 'thin'},
-          left: {style: 'none'},
           right: {style: 'none'}
         }
-      })
 
-      worksheet.getCell(`F${rowNumber}`).border = {
-        top: {style: 'thin'},
-        left: {style: 'none'},
-        bottom: {style: 'thin'},
-        right: {style: 'thin'}
-      }
+        const insideColumns = ['B', 'C', 'D', 'E']
+        insideColumns.forEach((v) => {
+          worksheet.getCell(`${v}${rowNumber}`).border = {
+            top: {style: 'thin'},
+            bottom: {style: 'thin'},
+            left: {style: 'none'},
+            right: {style: 'none'}
+          }
+        })
+
+        worksheet.getCell(`F${rowNumber}`).border = {
+          top: {style: 'thin'},
+          left: {style: 'none'},
+          bottom: {style: 'thin'},
+          right: {style: 'thin'}
+        }
+      })
+      workbook.xlsx.writeFile('Wrestlers.xlsx')
     })
-    workbook.xlsx.writeFile('Wrestlers.xlsx')
-  }))
+  })
+
 }
 
 main().then(r => console.log('done'))
