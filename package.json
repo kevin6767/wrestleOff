@@ -11,6 +11,7 @@
   "dependencies": {
     "axios": "^0.24.0",
     "cheerio": "^1.0.0-rc.10",
+    "exceljs": "^4.3.0",
     "nodejs-web-scraper": "^6.0.2",
     "puppeteer": "^11.0.0",
     "request": "^2.88.2",
