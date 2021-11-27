@@ -23,7 +23,7 @@ async function main(){
 
   ]
   let teamsArr = []
-  const browser = await puppeteer.launch({headless: true});
+  const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
 
   page.on('dialog', async dialog => {
@@ -35,14 +35,16 @@ async function main(){
   await page.waitForTimeout(5000)
   let optionValue = await page.$$eval('option', options => options.find(o => o.innerHTML === `Tennessee Secondary School Athletic Association`)?.value)
   await page.select('#gbId', optionValue);
+
   console.log(`--- Selecting ${optionValue} ---`)
   await page.click(`#gbFrame > div.buttonRow.inputButton > div > input`)
   await page.waitForTimeout(5000)
+
   for (let i = 0; i < oppTeamIds.length; i++) {
     let singleTeamArr = []
-    console.log(`--- Changing Pages ---`)
-    await page.goto(`https://www.trackwrestling.com/seasons/MainFrame.jsp?TIM=1637824072444&twSessionId=swcvsilvlp&loadBalanced=true&pageName=TeamRoster.jsp%3FTIM%3D1637824091238%26twSessionId%3Dswcvsilvlp%26teamId%${oppTeamIds[i].id}`)
-    beginScraping(page, singleTeamArr)
+    console.log(`--- Navigating to ${oppTeamIds[i].name}'s Page ---`)
+    await page.goto(`https://www.trackwrestling.com/seasons/MainFrame.jsp?TIM=1637824072444&twSessionId=swcvsilvlp&loadBalanced=true&pageName=TeamRoster.jsp%3FTIM%1637824072444%26twSessionId%3Dswcvsilvlp%26teamId%${oppTeamIds[i].id}`)
+    await beginScraping(page, singleTeamArr, oppTeamIds[i].id)
     await page.waitForTimeout(10000)
     teamsArr.push(singleTeamArr)
 
@@ -52,13 +54,15 @@ async function main(){
 
 }
 
-async function beginScraping(page, holderArr) {
+async function beginScraping(page, holderArr, teamId) {
   await page.waitForTimeout(5000)
   const frame = await page.frames().find(m => m.name() === 'PageFrame')
   const table = await frame.$('#pageGridFrame > table')
   const count = await table.$$eval('#pageGridFrame > table > tbody > tr', el => el.length )
   let teamName = await frame.$eval(`#pageHeaderFrame`, element => element.textContent)
+
   console.log(`--- Scraping ${teamName} ---`)
+
   for (let i = 3; i < count; i++) {
     let name = await table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(2)`, el => el.textContent)
     let weight = await Number(table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(3)`, el => el.textContent))
@@ -69,9 +73,38 @@ async function beginScraping(page, holderArr) {
     holderArr.push(new Wrestler(name,weight, wins, losses, teamName))
 
   }
+   await scrapeWinsAndLosses(page, holderArr, teamId, count)
 
-  return
+}
 
+async function scrapeWinsAndLosses(page, holderArr, teamId, count) {
+  console.log(`--- Navigating to Schedule ---`)
+
+  await page.waitForTimeout(5000)
+  const frame = await page.frames().find(m => m.name() === 'PageFrame')
+  await frame.click(`#moreLinks`)
+
+  await page.waitForTimeout(5000)
+  await frame.click(`#moreTopLinksFrame > ul > li:nth-child(3) > a`)
+
+  await page.waitForTimeout(5000)
+  console.log(`--- Scraping Wrestlers Matches ---`)
+
+  for (let i = 0; i < holderArr.length; i++) {
+    // const option = (await frame.$x(
+    //   `//select[@id = "wrestler"]/option[text() = "Henri Mugnier"]`
+    // ))[0];
+    //   console.log(option)
+
+    let [optElementHandle] = await frame.$x(`//select[@id="wrestler"]//option[contains(text() , "${holderArr[i].name}")]`)
+    const text = await optElementHandle.getProperty('value')
+    const value = await text.jsonValue()
+
+    console.log(value)
+    await frame.select('#wrestler', value)
+    await page.waitForTimeout(5000)
+
+  }
 }
 
 
