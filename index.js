@@ -1,29 +1,11 @@
 const puppeteer = require('puppeteer')
-const cheerio = require('cheerio')
-const Excel = require('exceljs')
+const p = require('./excelProcess')
+const crawler = require('./crawler')
+const teamObject = require('./teamObject')
 
-function Wrestler(name, weight, wins, losses, teamName) {
-  this.name = name
-  this.weight = weight
-  this.wins = wins
-  this.losses = losses
-  this.teamName = teamName
-}
-
-async function main(){
-  const oppTeamIds = [
-    {
-      name: 'Fairview',
-      id: '3D1163172138'
-    },
-    {
-      name: 'Harpeth',
-      id: '3D1163191138'
-    }
-
-  ]
+async function main() {
   let teamsArr = []
-  const browser = await puppeteer.launch({headless: false});
+  const browser = await puppeteer.launch({headless: true});
   const page = await browser.newPage();
 
   page.on('dialog', async dialog => {
@@ -40,128 +22,21 @@ async function main(){
   await page.click(`#gbFrame > div.buttonRow.inputButton > div > input`)
   await page.waitForTimeout(5000)
 
-  for (let i = 0; i < oppTeamIds.length; i++) {
+  for (let i = 0; i < teamObject.teamsToScrape.length; i++) {
     let singleTeamArr = []
-    console.log(`--- Navigating to ${oppTeamIds[i].name}'s Page ---`)
-    await page.goto(`https://www.trackwrestling.com/seasons/MainFrame.jsp?TIM=1637824072444&twSessionId=swcvsilvlp&loadBalanced=true&pageName=TeamRoster.jsp%3FTIM%1637824072444%26twSessionId%3Dswcvsilvlp%26teamId%${oppTeamIds[i].id}`)
-    await beginScraping(page, singleTeamArr, oppTeamIds[i].id)
+    console.log(`--- Navigating to ${teamObject.teamsToScrape[i].name}'s Page ---`)
+    await page.goto(`https://www.trackwrestling.com/seasons/MainFrame.jsp?TIM=1637824072444&twSessionId=swcvsilvlp&loadBalanced=true&pageName=TeamRoster.jsp%3FTIM%1637824072444%26twSessionId%3Dswcvsilvlp%26teamId%${teamObject.teamsToScrape[i].id}`)
+    await crawler.beginScraping(page, singleTeamArr, teamObject.teamsToScrape[i].id)
     await page.waitForTimeout(10000)
     teamsArr.push(singleTeamArr)
 
-    }
-    await console.log(`--- Starting Spreadsheet Process ---`)
-    await startExclProcess(teamsArr)
-
-}
-
-async function beginScraping(page, holderArr, teamId) {
-  await page.waitForTimeout(5000)
-  const frame = await page.frames().find(m => m.name() === 'PageFrame')
-  const table = await frame.$('#pageGridFrame > table')
-  const count = await table.$$eval('#pageGridFrame > table > tbody > tr', el => el.length )
-  let teamName = await frame.$eval(`#pageHeaderFrame`, element => element.textContent)
-
-  console.log(`--- Scraping ${teamName} ---`)
-
-  for (let i = 3; i < count; i++) {
-    let name = await table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(2)`, el => el.textContent)
-    let weight = await Number(table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(3)`, el => el.textContent))
-    let record = await table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(7)`, el => el.textContent)
-    let recordSanitized = record.split('-')
-    let wins = recordSanitized[0]
-    let losses = recordSanitized[1]
-    holderArr.push(new Wrestler(name,weight, wins, losses, teamName))
-
   }
-   await scrapeWinsAndLosses(page, holderArr, teamId, count)
+  await console.log(`--- Starting Spreadsheet Process ---`)
+  await p.startExclProcess(teamsArr)
 
 }
 
-async function scrapeWinsAndLosses(page, holderArr, teamId, count) {
-  console.log(`--- Navigating to Schedule ---`)
-
-  await page.waitForTimeout(5000)
-  const frame = await page.frames().find(m => m.name() === 'PageFrame')
-  await frame.click(`#moreLinks`)
-
-  await page.waitForTimeout(5000)
-  await frame.click(`#moreTopLinksFrame > ul > li:nth-child(3) > a`)
-
-  await page.waitForTimeout(5000)
-  console.log(`--- Scraping Wrestlers Matches ---`)
-
-  for (let i = 0; i < holderArr.length; i++) {
-    // const option = (await frame.$x(
-    //   `//select[@id = "wrestler"]/option[text() = "Henri Mugnier"]`
-    // ))[0];
-    //   console.log(option)
-
-    let [optElementHandle] = await frame.$x(`//select[@id="wrestler"]//option[contains(text() , "${holderArr[i].name}")]`)
-    const text = await optElementHandle.getProperty('value')
-    const value = await text.jsonValue()
-
-    console.log(value)
-    await frame.select('#wrestler', value)
-    await page.waitForTimeout(5000)
-
-  }
-}
 
 
-async function startExclProcess(teamArr) {
-  let workbook = new Excel.Workbook()
-  teamArr.map(team => {
-    let worksheet = workbook.addWorksheet(`${team[0].teamName}`)
-    console.log(`--- Writing ${team[0].teamName} ---`)
-    worksheet.columns = [
-      {header: 'Team Name', key: 'teamName'},
-      {header: 'Name', key: 'name'},
-      {header: 'Weight', key: 'weight'},
-      {header: 'Wins', key: 'wins'},
-      {header: 'Losses', key: 'losses'},
-    ]
-
-    worksheet.columns.forEach(column => {
-      column.width = column.header.length < 18 ? 18 : column.header.length
-    })
-
-    worksheet.getRow(1).font = {bold: true}
-
-    team.forEach((e, index) => {
-      const rowIndex = index + 2
-      worksheet.addRow({
-        ...e,
-      })
-      console.log(`--- Writing ${e.name} ---`)
-      worksheet.eachRow({ includeEmpty: false }, function (row, rowNumber) {
-        worksheet.getCell(`A${rowNumber}`).border = {
-          top: {style: 'thin'},
-          left: {style: 'thin'},
-          bottom: {style: 'thin'},
-          right: {style: 'none'}
-        }
-
-        const insideColumns = ['B', 'C', 'D', 'E']
-        insideColumns.forEach((v) => {
-          worksheet.getCell(`${v}${rowNumber}`).border = {
-            top: {style: 'thin'},
-            bottom: {style: 'thin'},
-            left: {style: 'none'},
-            right: {style: 'none'}
-          }
-        })
-
-        worksheet.getCell(`F${rowNumber}`).border = {
-          top: {style: 'thin'},
-          left: {style: 'none'},
-          bottom: {style: 'thin'},
-          right: {style: 'thin'}
-        }
-      })
-      workbook.xlsx.writeFile('Wrestlers.xlsx')
-    })
-  })
-
-}
 
 main().then(r => console.log('done'))
