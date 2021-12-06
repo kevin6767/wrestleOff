@@ -40,10 +40,9 @@ async function startExclProcess(teamArr) {
         losses: e.losses,
         profile: {
           text: 'This Profile',
-          hyperlink: `#\'${e.name}\'!A1`
+          hyperlink: `#\'${e.id}'!A1`
         }
       })
-
       let fixer = e.winCol.map(l => [l.oppName + ' ' + '(' + l.school + ')'])
       worksheet.getCell(`F${index + 2}`).value = fixer.join(` \r\n`)
       let lossFixer = e.lossCol.map(l => [l.oppName + ' ' + '(' + l.school + ')'])
@@ -73,6 +72,12 @@ async function startExclProcess(teamArr) {
           bottom: {style: 'thin'},
           right: {style: 'thin'}
         }
+        worksheet.getCell(`G${rowNumber}`).border = {
+          top: {style: 'thin'},
+          left: {style: 'none'},
+          bottom: {style: 'thin'},
+          right: {style: 'thin'}
+        }
       })
       let rowIndex = 1;
       for (rowIndex; rowIndex <= worksheet.rowCount; rowIndex++) {
@@ -85,7 +90,7 @@ async function startExclProcess(teamArr) {
 }
 
 async function writePlayerProfile(e, workbook) {
-  let worksheet = workbook.addWorksheet(`${e.name}`)
+  let worksheet = workbook.addWorksheet(`${e.id}`)
   worksheet.properties.defaultColWidth = 30
   console.log(`--- Writing ${e.name} Player Profile ---`)
   worksheet.columns = [
@@ -110,7 +115,7 @@ async function writePlayerProfile(e, workbook) {
   let lossFixer = e.lossCol.map(l => [l.oppName + ' ' + '(' + l.school + ')'])
 
   worksheet.getCell(`G${2}`).value = lossFixer.join(` \r\n`).replace(/,/, '')
-
+  console.log(worksheet.name)
 
 }
 

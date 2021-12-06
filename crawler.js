@@ -41,9 +41,9 @@ async function cleaningSummary(summary, wrestlerName, event, weightAtEvent, prof
     let loserSchool = regexFix[4].trim()
 
     if (winner === wrestlerName) {
-      return profile.winCol.push(new lib.Win(wrestlerName, loser, event, weightAtEvent, loserSchool))
+      return profile.winCol.push(new lib.Win(wrestlerName, loser, event, weightAtEvent, loserSchool, profile.id))
     } else if (loser === wrestlerName) {
-      return profile.lossCol.push(new lib.Loss(wrestlerName, winner, event, weightAtEvent, winnerSchool))
+      return profile.lossCol.push(new lib.Loss(wrestlerName, winner, event, weightAtEvent, winnerSchool, profile.id))
     }
   }
 }
