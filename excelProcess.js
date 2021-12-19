@@ -5,6 +5,9 @@ async function startExclProcess(teamArr) {
   let workbook = new Excel.Workbook()
 
   teamArr.map(team => {
+    if (team.length <= 0) {
+      return
+    }
     let worksheet = workbook.addWorksheet(`${team[0].teamName}`)
     worksheet.properties.defaultRowHeight = 80
     console.log(`--- Writing ${team[0].teamName} ---`)
@@ -115,7 +118,7 @@ async function writePlayerProfile(e, workbook) {
   let lossFixer = e.lossCol.map(l => [l.oppName + ' ' + '(' + l.school + ')'])
 
   worksheet.getCell(`G${2}`).value = lossFixer.join(` \r\n`).replace(/,/, '')
-  console.log(worksheet.name)
+
 
 }
 

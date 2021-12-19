@@ -8,8 +8,8 @@ async function beginScraping(page, holderArr, teamId) {
   let teamName = await frame.$eval(`#pageHeaderFrame`, element => element.textContent)
 
   console.log(`--- Scraping ${teamName} ---`)
-
-  for (let i = 3; i < 4; i++) {
+  await page.waitForTimeout(1000)
+  for (let i = 3; i < count; i++) {
     let name = await table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(2)`, el => el.textContent)
     let weight = await table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(4)`, el => el.textContent)
     let record = await table.$eval(`#pageGridFrame > table > tbody > tr:nth-child(${i}) > td:nth-child(7)`, el => el.textContent)
@@ -29,7 +29,8 @@ async function cleaningSummary(summary, wrestlerName, event, weightAtEvent, prof
   let summaryBreakUp = summary.split(' ')
   let over = summaryBreakUp.indexOf('over')
   let regexFix = /(?:.*?\s+-\s+)?([^()]+)\s+\(([^()]+)\)\s+over\s+(.*)\s+\((?![^()]*\d[-:]\d[^()]*\))([^()]*)\)/.exec(summary)
-  if (over < 0) {
+
+  if (over < 0 || !regexFix) {
     return profile.winCol.push({
       oppName: 'Received Bye',
       school: '(Bye)'

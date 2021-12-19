@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer')
 const p = require('./excelProcess')
+const lib = require('./lib')
 const crawler = require('./crawler')
 const teamObject = require('./teamObject')
 
@@ -21,7 +22,7 @@ async function main() {
   console.log(`--- Selecting ${optionValue} ---`)
   await page.click(`#gbFrame > div.buttonRow.inputButton > div > input`)
   await page.waitForTimeout(5000)
-
+  //teamObject.teamsToScrape.length
   for (let i = 0; i < teamObject.teamsToScrape.length; i++) {
     let singleTeamArr = []
     console.log(`--- Navigating to ${teamObject.teamsToScrape[i].name}'s Page ---`)
