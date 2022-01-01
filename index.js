@@ -1,10 +1,14 @@
 const puppeteer = require('puppeteer')
+const Excel = require('exceljs')
 const p = require('./excelProcess')
 const lib = require('./lib')
 const crawler = require('./crawler')
 const teamObject = require('./teamObject')
 
 async function main() {
+  let workbook = new Excel.Workbook()
+  workbook.addWorksheet('Navigation')
+  await p.addNavigationSheet(workbook)
   let teamsArr = []
   const browser = await puppeteer.launch({headless: true});
   const page = await browser.newPage();
@@ -33,8 +37,7 @@ async function main() {
 
   }
   await console.log(`--- Starting Spreadsheet Process ---`)
-  await p.startExclProcess(teamsArr)
-
+  await p.startExclProcess(teamsArr,workbook)
 }
 
 

@@ -1,8 +1,6 @@
-const Excel = require('exceljs')
+const teamObject = require('./teamObject')
 
-
-async function startExclProcess(teamArr) {
-  let workbook = new Excel.Workbook()
+async function startExclProcess(teamArr, workbook) {
 
   teamArr.map(team => {
     if (team.length <= 0) {
@@ -122,4 +120,31 @@ async function writePlayerProfile(e, workbook) {
 
 }
 
-module.exports = { startExclProcess }
+async function addNavigationSheet(workbook) {
+  const navigation = workbook.getWorksheet('Navigation')
+  navigation.eachRow({includeEmpty: false}, function (row, rowNumber) {
+    navigation.getCell(`A${rowNumber}`).border = {
+      top: {style: 'thin'},
+      left: {style: 'thin'},
+      bottom: {style: 'thin'},
+      right: {style: 'none'}
+    }
+  })
+  navigation.columns = [
+    {header: 'Team Name', key: 'teamName'},
+  ]
+  teamObject.teamsToScrape.forEach((e, index) => {
+    navigation.addRow({
+      teamName: {
+        text: e.name,
+        hyperlink: `#\'${e.name}'!A1`
+      }
+    })
+  })
+  let rowIndex = 1;
+  for (rowIndex; rowIndex <= navigation.rowCount; rowIndex++) {
+    navigation.getRow(rowIndex).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  }
+}
+
+module.exports = { startExclProcess, addNavigationSheet }
